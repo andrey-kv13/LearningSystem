@@ -26,7 +26,17 @@ public class ScheduleController {
     @GetMapping("/{id}")
     public CreateScheduleResponse getById(@PathVariable Long id) {
 
-        return scheduleService.getById(id);
+        return scheduleService.getScheduleById(id);
+    }
+
+    @GetMapping("/group/{groupId}/schedule")
+    public Page<CreateScheduleResponse> findScheduleByGroupId(@PathVariable Long groupId, Pageable pageable) {
+        return scheduleService.findSchedulesByGroupId(groupId, pageable);
+    }
+
+    @GetMapping("/professor/{professorId}/schedule")
+    public Page<CreateScheduleResponse> findByProfessorId(@PathVariable Long professorId, Pageable pageable) {
+        return scheduleService.findSchedulesByProfessorId(professorId, pageable);
     }
 
     @PostMapping

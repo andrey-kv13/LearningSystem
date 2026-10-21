@@ -54,13 +54,13 @@ public class StudentService {
 
     private void applyGroupIds(Student student, List<Long> groupIds) {
         for (Group group : student.getGroups()) {
-            group.getStudents().remove(student);
+            group.getStudent().remove(student);
         }
         student.getGroups().clear();
         for (Long groupId : groupIds) {
             Group group = groupRepository.findById(groupId).orElseThrow(() -> new GroupNotFoundException(groupId));
             student.getGroups().add(group);
-            group.getStudents().add(student);
+            group.getStudent().add(student);
         }
 
     }

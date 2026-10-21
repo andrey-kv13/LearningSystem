@@ -1,8 +1,10 @@
 package students.dev.service;
 
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import students.dev.dto.CreateScheduleRequest;
 import students.dev.dto.CreateScheduleResponse;
@@ -18,6 +20,8 @@ import students.dev.repository.CourseRepository;
 import students.dev.repository.GroupRepository;
 import students.dev.repository.ProfessorRepository;
 import students.dev.repository.ScheduleRepository;
+
+import java.time.LocalDate;
 
 @Service
 @RequiredArgsConstructor
@@ -46,6 +50,26 @@ public class ScheduleService {
         );
     }
 
+    private void applyRequest(Schedule schedule, CreateScheduleRequest request) {
+        schedule.setGroup(findGroup(request.groupId()));
+        schedule.setProfessor(findProfessor(request.professorId()));
+        schedule.setCourse(findCourse(request.courseId()));
+        schedule.setStartEducationDate(request.startEducationDate());
+        schedule.setEndEducationDate(request.endEducationDate());
+    }
+
+    private Group findGroup(Long id) {
+        return groupRepository.findById(id).orElseThrow(() -> new GroupNotFoundException(id));
+    }
+
+    private Professor findProfessor(Long id) {
+        return professorRepository.findById(id).orElseThrow(() -> new ProfessorNotFoundException(id));
+    }
+
+    private Course findCourse(Long id) {
+        return courseRepository.findById(id).orElseThrow(() -> new CourseNotFoundException(id));
+    }
+
     public Page<CreateScheduleResponse> findAll(Pageable pageable) {
         return scheduleRepository.findAll(pageable).map(this::toResponse);
     }
@@ -54,7 +78,7 @@ public class ScheduleService {
         return scheduleRepository.findById(id).orElseThrow(() -> new ScheduleNotFoundException(id));
     }
 
-    public CreateScheduleResponse getById(Long id) {
+    public CreateScheduleResponse getScheduleById(Long id) {
         return toResponse(findScheduleById(id));
     }
 
@@ -75,23 +99,22 @@ public class ScheduleService {
         scheduleRepository.delete(schedule);
     }
 
-    private void applyRequest(Schedule schedule, CreateScheduleRequest request) {
-        schedule.setGroup(findGroup(request.groupId()));
-        schedule.setProfessor(findProfessor(request.professorId()));
-        schedule.setCourse(findCourse(request.courseId()));
-        schedule.setStartEducationDate(request.startEducationDate());
-        schedule.setEndEducationDate(request.endEducationDate());
+    @Transactional
+    @Scheduled(cron = "0 0 3 * * *")
+    public void  deleteExpiredSchedule() {
+        LocalDate cutoff = LocalDate.now().minusYears(1);
+        scheduleRepository.deleteByEndEducationDateBefore(cutoff);
+
     }
 
-    private Group findGroup(Long id) {
-        return groupRepository.findById(id).orElseThrow(() -> new GroupNotFoundException(id));
+    public Page<CreateScheduleResponse> findSchedulesByGroupId(Long groupId, Pageable pageable) {
+        findGroup(groupId);
+        return scheduleRepository.findByGroupId(groupId, pageable).map(this::toResponse);
     }
 
-    private Professor findProfessor(Long id) {
-        return professorRepository.findById(id).orElseThrow(() -> new ProfessorNotFoundException(id));
-    }
 
-    private Course findCourse(Long id) {
-        return courseRepository.findById(id).orElseThrow(() -> new CourseNotFoundException(id));
+    public Page<CreateScheduleResponse> findSchedulesByProfessorId(Long professorId, Pageable pageable) {
+        findProfessor(professorId);
+        return scheduleRepository.findByProfessorId(professorId, pageable).map(this::toResponse);
     }
 }

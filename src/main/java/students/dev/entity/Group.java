@@ -23,11 +23,9 @@ public class Group {
 
     private String name;
 
-    @ManyToMany(mappedBy = "study_groups")
-    private Set<Student> students = new HashSet<>();
+    @ManyToMany(mappedBy = "groups")
+    private Set<Student> student = new HashSet<>();
 
     @ManyToMany(mappedBy = "study_groups")
     private Set<Course> courses = new HashSet<>();
-
-
 }
